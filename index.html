@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mirage V3 // Cyberpunk Terminal</title>
+    <style>
+        :root {
+            --bg-color: #0a0a0a;
+            --border-cyan: #00ffff;
+            --text-cyan: #00ffff;
+            --border-green: #00ff00;
+            --text-green: #00ff00;
+            --border-magenta: #ff00ff;
+            --text-magenta: #ff00ff;
+            --text-red: #ff3333;
+            --text-white: #ffffff;
+            --text-dim: #666666;
+            --font-stack: 'Courier New', Courier, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #000;
+            color: var(--text-white);
+            font-family: var(--font-stack);
+            margin: 0;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Scanline effect */
+        body::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .terminal-container {
+            width: 100%;
+            max-width: 1200px;
+            height: 90vh;
+            display: grid;
+            grid-template-rows: 60px 1fr;
+            gap: 10px;
+            border: 1px solid #333;
+            padding: 10px;
+            background-color: var(--bg-color);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+            position: relative;
+            z-index: 3;
+        }
+
+        /* --- HEADER --- */
+        .header {
+            border: 2px solid var(--border-cyan);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            background: #001111;
+        }
+        .header-title { color: var(--text-cyan); font-weight: bold; font-style: italic; }
+        .header-center { color: var(--text-magenta); font-weight: bold; letter-spacing: 2px; }
+        .header-time { color: var(--text-dim); }
+
+        /* --- MAIN LAYOUT --- */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 10px;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            border: 1px solid var(--border-cyan);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-title {
+            text-align: center;
+            border-bottom: 1px solid var(--border-cyan);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .menu-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            color: var(--text-white);
+            cursor: pointer;
+            padding: 5px;
+            transition: background 0.2s;
+        }
+        .menu-item:hover {
+            background: rgba(0, 255, 255, 0.1);
+        }
+        .icon { color: var(--text-magenta); margin-right: 15px; width: 20px; text-align: center; }
+        .menu-active { 
+            color: var(--text-cyan); 
+            text-shadow: 0 0 5px var(--text-cyan);
+            border-right: 2px solid var(--border-cyan);
+            background: rgba(0, 255, 255, 0.05);
+        }
+
+        /* BODY AREA */
+        .content-area {
+            position: relative;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .view-section {
+            display: none; /* Hidden by default */
+            height: 100%;
+            flex-direction: column;
+            gap: 10px;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        .view-active {
+            display: flex; /* Flex is important for layout */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* DASHBOARD LAYOUT */
+        .dashboard-grid {
+            display: grid;
+            grid-template-rows: auto 1fr 150px;
+            gap: 10px;
+            height: 100%;
+        }
+
+        /* GAUGES */
+        .gauges-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            height: 80px;
+        }
+        .gauge-box {
+            border: 1px solid;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .gauge-title { font-size: 0.8em; margin-bottom: 5px; text-align: center; }
+        .progress-bar-bg {
+            background: #222;
+            height: 20px;
+            width: 100%;
+            position: relative;
+        }
+        .progress-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+        .gauge-val { position: absolute; right: 5px; top: 0; font-size: 0.9em; color: #fff; line-height: 20px;}
+
+        /* PANELS */
+        .mid-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            overflow: hidden;
+        }
+        .panel {
+            border: 1px solid;
+            display: flex;
+            flex-direction: column;
+            background: rgba(0,0,0,0.5);
+        }
+        .panel-header {
+            padding: 5px 10px;
+            font-weight: bold;
+            border-bottom: 1px solid;
+            text-align: center;
+        }
+        .panel-content {
+            padding: 10px;
+            overflow-y: auto;
+            flex-grow: 1;
+            font-size: 0.9em;
+        }
+        
+        /* TABLES */
+        table { width: 100%; border-collapse: collapse; }
+        td, th { padding: 6px; text-align: left; border-bottom: 1px solid #222; }
+        th { color: var(--text-dim); font-size: 0.8em; text-transform: uppercase; }
+        .col-time { color: var(--text-dim); }
+        .col-ip { color: var(--text-cyan); }
+        .col-port { color: var(--text-magenta); text-align: right; }
+        .col-file { color: var(--text-green); }
+        .col-perm { color: var(--text-magenta); font-family: monospace; }
+
+        /* LOG WINDOW (Mini) */
+        .log-window {
+            border: 2px solid var(--border-magenta);
+            background: #050005;
+            display: flex;
+            flex-direction: column;
+        }
+        .log-content {
+            flex-grow: 1;
+            padding: 10px;
+            overflow-y: auto;
+            font-size: 0.9em;
+            line-height: 1.4em;
+        }
+        .log-line { margin-bottom: 4px; word-wrap: break-word; }
+        .log-ai { color: var(--text-cyan); }
+        .log-sys { color: var(--text-green); }
+        .log-alert { color: var(--text-red); font-weight: bold; }
+
+        /* TERMINAL VIEW */
+        .terminal-view {
+            background: #000;
+            border: 1px solid var(--text-green);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            font-family: 'Courier New', Courier, monospace;
+            box-shadow: inset 0 0 20px rgba(0, 255, 0, 0.1);
+        }
+        .cli-output {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        .cli-input-line {
+            display: flex;
+            align-items: center;
+            border-top: 1px solid #333;
+            padding-top: 10px;
+        }
+        .cli-prompt { color: var(--text-green); margin-right: 10px; font-weight: bold; }
+        .cli-input {
+            background: transparent;
+            border: none;
+            color: var(--text-white);
+            font-family: inherit;
+            font-size: 1.1em;
+            flex-grow: 1;
+            outline: none;
+        }
+
+        /* NETWORK MAP VIEW */
+        .network-map {
+            position: relative;
+            height: 100%;
+            background-image: radial-gradient(circle at 1px 1px, #222 1px, transparent 0);
+            background-size: 20px 20px;
+        }
+        .node {
+            position: absolute;
+            width: 100px;
+            height: 60px;
+            border: 2px solid var(--border-cyan);
+            background: #001111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-cyan);
+            font-size: 0.8em;
+            box-shadow: 0 0 10px var(--border-cyan);
+            text-align: center;
+            z-index: 2;
+        }
+        .node-db { border-color: var(--border-magenta); color: var(--text-magenta); box-shadow: 0 0 10px var(--border-magenta); }
+        .node-fw { border-color: var(--text-red); color: var(--text-red); box-shadow: 0 0 10px var(--text-red); }
+        
+        .connector {
+            position: absolute;
+            height: 2px;
+            background: #444;
+            z-index: 1;
+        }
+
+        /* WEB CONFIG FORM */
+        .config-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            padding: 20px;
+        }
+        .form-group {
+            border: 1px solid #333;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+        }
+        .form-label { color: var(--text-dim); display: block; margin-bottom: 10px; }
+        .toggle-switch {
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            position: relative;
+            margin-right: 10px;
+        }
+        .toggle-knob {
+            width: 18px;
+            height: 18px;
+            background: var(--text-white);
+            border-radius: 50%;
+            position: absolute;
+            top: 1px;
+            left: 1px;
+        }
+        .toggle-on .toggle-knob { left: 21px; background: var(--text-green); }
+        .toggle-on { background: rgba(0, 255, 0, 0.3); }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #111; }
+        ::-webkit-scrollbar-thumb { background: #444; }
+
+    </style>
+</head>
+<body>
+
+    <div class="terminal-container">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-title">MIRAGE V3 // SIMULATION ENGINE</div>
+            <div class="header-center">🔒 SECURE ENVIRONMENT</div>
+            <div class="header-time" id="clock">00:00:00 UTC</div>
+        </div>
+
+        <div class="main-grid">
+            <!-- SIDEBAR -->
+            <div class="sidebar">
+                <div class="sidebar-title">SYSTEM MENU</div>
+                <div class="menu-item menu-active" onclick="switchView('dashboard', this)"><span class="icon">◈</span> Dashboard</div>
+                <div class="menu-item" onclick="switchView('terminal', this)"><span class="icon">_</span> Terminal CLI</div>
+                <div class="menu-item" onclick="switchView('network', this)"><span class="icon">▣</span> Network Map</div>
+                <div class="menu-item" onclick="switchView('assets', this)"><span class="icon">▤</span> Virtual Assets</div>
+                <div class="menu-item" onclick="switchView('config', this)"><span class="icon">▥</span> Web Config</div>
+                <div class="menu-item" onclick="switchView('burp', this)"><span class="icon">▦</span> Burp Integration</div>
+                <br>
+                <div class="menu-item" style="color: var(--text-dim)">! DIFFICULTY: HARD</div>
+                <div class="menu-item" style="color: var(--text-dim)">? MODE: ACTIVE DEFENSE</div>
+            </div>
+
+            <!-- BODY CONTENT AREA -->
+            <div class="content-area">
+
+                <!-- VIEW 1: DASHBOARD -->
+                <div id="view-dashboard" class="view-section view-active dashboard-grid">
+                    <!-- GAUGES -->
+                    <div class="gauges-row">
+                        <div class="gauge-box" style="border-color: var(--border-cyan)">
+                            <div class="gauge-title" style="color: var(--text-cyan)">CPU LOAD</div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-fill" id="cpu-fill" style="width: 15%; background: var(--border-cyan)"></div>
+                                <div class="gauge-val" id="cpu-val">15%</div>
+                            </div>
+                        </div>
+                        <div class="gauge-box" style="border-color: var(--border-magenta)">
+                            <div class="gauge-title" style="color: var(--text-magenta)">MEMORY</div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-fill" id="mem-fill" style="width: 40%; background: var(--border-magenta)"></div>
+                                <div class="gauge-val" id="mem-val">40%</div>
+                            </div>
+                        </div>
+                        <div class="gauge-box" style="border-color: var(--border-green)">
+                            <div class="gauge-title" style="color: var(--text-green)">THREAT LEVEL</div>
+                            <div style="text-align: center; font-weight: bold; font-size: 1.2em; color: var(--text-green)" id="threat-text">LOW</div>
+                        </div>
+                    </div>
+
+                    <!-- MIDDLE PANELS -->
+                    <div class="mid-section">
+                        <div class="panel" style="border-color: var(--border-cyan)">
+                            <div class="panel-header" style="background: rgba(0, 255, 255, 0.1); border-color: var(--border-cyan)">CONNECTION LOGS</div>
+                            <div class="panel-content">
+                                <table id="history-table"></table>
+                            </div>
+                        </div>
+                        <div class="panel" style="border-color: var(--border-green)">
+                            <div class="panel-header" style="background: rgba(0, 255, 0, 0.1); border-color: var(--border-green)">ACTIVE MODULES</div>
+                            <div class="panel-content" id="tasks-content" style="color: var(--text-green)">
+                                • Monitoring Port 22 (SSH)<br>
+                                • Monitoring Port 80 (HTTP)<br>
+                                • Fabricator: Generating /home/kaito/budget.csv<br>
+                                • Burp Suite Plugin: Active (Pattern Matching)
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MINI LOG -->
+                    <div class="log-window">
+                        <div class="panel-header" style="background: #220022; border-bottom: 1px solid var(--border-magenta); color: var(--text-magenta)">AI KERNEL OUTPUT</div>
+                        <div class="log-content" id="log-feed">
+                            <div class="log-line log-sys">System initialized. Listening on encrypted channels...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 2: TERMINAL CLI -->
+                <div id="view-terminal" class="view-section">
+                    <div class="terminal-view" onclick="document.getElementById('cli-input').focus()">
+                        <div class="cli-output" id="cli-output">
+                            <div style="color: var(--text-dim)">Mirage OS v3.0.1 (tty1)</div>
+                            <div style="color: var(--text-dim)">Login: root (automatic)</div>
+                            <br>
+                            <div>Welcome to the Mirage Cyber Range Control System.</div>
+                            <div>Type 'help' for available commands.</div>
+                            <br>
+                        </div>
+                        <div class="cli-input-line">
+                            <span class="cli-prompt">root@nexus-core:~#</span>
+                            <input type="text" id="cli-input" class="cli-input" autocomplete="off">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 3: NETWORK MAP -->
+                <div id="view-network" class="view-section">
+                    <div class="panel" style="height: 100%; border-color: var(--border-cyan)">
+                        <div class="panel-header">LIVE NETWORK TOPOLOGY</div>
+                        <div class="network-map">
+                            <!-- Visual Nodes -->
+                            <div class="node" style="top: 50px; left: 50px;">Internet<br>(Attacker)</div>
+                            <div class="connector" style="top: 80px; left: 150px; width: 100px;"></div>
+                            
+                            <div class="node node-fw" style="top: 50px; left: 250px;">Firewall<br>(Active)</div>
+                            <div class="connector" style="top: 80px; left: 350px; width: 100px;"></div>
+                            
+                            <div class="node" style="top: 50px; left: 450px;">Load Balancer<br>nginx</div>
+                            
+                            <!-- Branching -->
+                            <div class="connector" style="top: 110px; left: 500px; width: 2px; height: 50px;"></div>
+                            <div class="connector" style="top: 80px; left: 550px; width: 50px;"></div>
+
+                            <div class="node" style="top: 160px; left: 450px;">App Server<br>Node.js</div>
+                            <div class="connector" style="top: 190px; left: 550px; width: 100px;"></div>
+                            
+                            <div class="node node-db" style="top: 160px; left: 650px;">DB Cluster<br>PostgreSQL</div>
+                            
+                            <div class="node" style="top: 50px; left: 600px;">Honeypot<br>Port 2222</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 4: ASSETS -->
+                <div id="view-assets" class="view-section">
+                    <div class="panel" style="height: 100%; border-color: var(--border-magenta)">
+                        <div class="panel-header" style="color: var(--text-magenta)">VIRTUAL FILE SYSTEM ARTIFACTS</div>
+                        <div class="panel-content">
+                            <table>
+                                <thead>
+                                    <tr><th>Permissions</th><th>Owner</th><th>Size</th><th>File Name</th><th>Modified</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td class="col-perm">drwxr-xr-x</td><td>root</td><td>4096</td><td class="col-ip">/home/kaito/</td><td>Today</td></tr>
+                                    <tr><td class="col-perm">-rw-r--r--</td><td>kaito</td><td>24KB</td><td class="col-file">Q4_BlackOps_Budget.xlsx</td><td>10:02 AM</td></tr>
+                                    <tr><td class="col-perm">-rw-------</td><td>kaito</td><td>1.2KB</td><td class="col-file">id_rsa</td><td>Jan 12</td></tr>
+                                    <tr><td class="col-perm">-rw-r--r--</td><td>www-data</td><td>8.5KB</td><td class="col-file">secret_notes.docx</td><td>Yesterday</td></tr>
+                                    <tr><td class="col-perm">drwx------</td><td>postgres</td><td>4096</td><td class="col-ip">/var/lib/postgresql/</td><td>Oct 20</td></tr>
+                                    <tr><td class="col-perm">-rwxr-xr-x</td><td>root</td><td>512B</td><td class="col-file">logic_bomb.sh</td><td>03:33 AM</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 5: WEB CONFIG -->
+                <div id="view-config" class="view-section">
+                    <div class="panel" style="height: 100%; border-color: var(--border-green)">
+                        <div class="panel-header" style="color: var(--text-green)">AI VULNERABILITY CONTROLLER</div>
+                        <div class="panel-content config-form">
+                            <div class="form-group">
+                                <label class="form-label">SQL Injection Vulnerability</label>
+                                <div class="toggle-switch toggle-on"><div class="toggle-knob"></div></div>
+                                <span style="color: var(--text-green)">ENABLED</span>
+                                <div style="color: var(--text-dim); font-size: 0.8em; margin-top: 5px;">Accepts ' OR 1=1 --</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">XSS Reflection</label>
+                                <div class="toggle-switch"><div class="toggle-knob"></div></div>
+                                <span style="color: var(--text-dim)">DISABLED</span>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Directory Traversal</label>
+                                <div class="toggle-switch toggle-on"><div class="toggle-knob"></div></div>
+                                <span style="color: var(--text-green)">ENABLED</span>
+                                <div style="color: var(--text-dim); font-size: 0.8em; margin-top: 5px;">/../../etc/passwd active</div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">WAF Simulation (Active Defense)</label>
+                                <div class="toggle-switch"><div class="toggle-knob"></div></div>
+                                <span style="color: var(--text-dim)">OFF</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- VIEW 6: BURP SUITE -->
+                <div id="view-burp" class="view-section">
+                    <div class="panel" style="height: 100%; border-color: var(--text-red)">
+                        <div class="panel-header" style="color: var(--text-red)">BURP SUITE INTERCEPT LOGS</div>
+                        <div class="panel-content">
+                            <table>
+                                <thead>
+                                    <tr><th>Method</th><th>Endpoint</th><th>Payload Detected</th><th>AI Response</th><th>Status</th></tr>
+                                </thead>
+                                <tbody id="burp-table">
+                                    <tr><td>POST</td><td>/login.php</td><td style="color: #faa">' OR 1=1</td><td>Generated Admin Dashboard</td><td style="color:var(--text-green)">200 OK</td></tr>
+                                    <tr><td>GET</td><td>/admin</td><td>None</td><td>Redirect to Login</td><td style="color:var(--text-dim)">302 Found</td></tr>
+                                    <tr><td>GET</td><td>/../../etc/passwd</td><td>Path Traversal</td><td>Served fake /etc/passwd</td><td style="color:var(--text-green)">200 OK</td></tr>
+                                    <tr><td>POST</td><td>/search</td><td><script>alert(1)</script></td><td>Sanitized Input</td><td style="color:var(--text-cyan)">200 OK</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- VIEW SWITCHING LOGIC ---
+        function switchView(viewName, element) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('view-active'));
+            document.getElementById(`view-${viewName}`).classList.add('view-active');
+            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('menu-active'));
+            element.classList.add('menu-active');
+            if (viewName === 'terminal') {
+                setTimeout(() => document.getElementById('cli-input').focus(), 100);
+            }
+        }
+
+        // --- UI ELEMENT REFERENCES ---
+        const logs = document.getElementById('log-feed');
+        const historyTable = document.getElementById('history-table');
+        const cpuFill = document.getElementById('cpu-fill');
+        const cpuVal = document.getElementById('cpu-val');
+        const memFill = document.getElementById('mem-fill');
+        const memVal = document.getElementById('mem-val');
+        const threatText = document.getElementById('threat-text');
+        const threatGaugeBox = document.querySelector('.gauge-box:last-child');
+        const clock = document.getElementById('clock');
+
+        // --- UI UPDATE FUNCTIONS ---
+        function updateClock() {
+            const now = new Date();
+            clock.innerText = now.toISOString().substr(11, 8) + " UTC";
+        }
+        setInterval(updateClock, 1000);
+
+        function addLog(msg, type = 'log-sys') {
+            const div = document.createElement('div');
+            div.className = `log-line ${type}`;
+            // Sanitize message to prevent accidental HTML injection
+            const textNode = document.createTextNode(`> ${msg}`);
+            div.appendChild(textNode);
+            logs.appendChild(div);
+            logs.scrollTop = logs.scrollHeight;
+            if (logs.children.length > 50) logs.removeChild(logs.firstChild);
+        }
+
+        function addHistory(time, ip, port) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td class="col-time">${time}</td>
+                <td class="col-ip">${ip}</td>
+                <td class="col-port">${port}</td>
+            `;
+            historyTable.prepend(row);
+            if (historyTable.children.length > 8) historyTable.removeChild(historyTable.lastChild);
+        }
+
+        function updateStatus(status) {
+            cpuFill.style.width = `${status.cpu}%`;
+            cpuVal.innerText = `${Math.floor(status.cpu)}%`;
+            memFill.style.width = `${status.mem}%`;
+            memVal.innerText = `${Math.floor(status.mem)}%`;
+
+            threatText.innerText = status.threat;
+            const color = status.threat === "HIGH" ? 'var(--text-red)' : status.threat === "MEDIUM" ? 'var(--text-magenta)' : 'var(--text-green)';
+            threatText.style.color = color;
+            threatGaugeBox.style.borderColor = color;
+        }
+
+        // --- WEBSOCKET LOGIC ---
+        function connect() {
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const ws = new WebSocket(`${wsProtocol}//${window.location.host}/ws`);
+
+            ws.onopen = function() {
+                addLog("Real-time connection to Mirage Kernel established.", "log-sys");
+            };
+
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                switch (data.type) {
+                    case 'status':
+                        updateStatus(data);
+                        break;
+                    case 'connection':
+                        addHistory(data.time, data.ip, data.port);
+                        addLog(`New connection from ${data.ip}:${data.port}`, 'log-sys');
+                        break;
+                    case 'ai_log':
+                        addLog(`AI: ${data.message}`, 'log-ai');
+                        break;
+                    case 'fab':
+                        addLog(`FABRICATOR: ${data.message}`, 'log-ai');
+                        break;
+                    case 'error':
+                        addLog(`SYSTEM ERROR: ${data.message}`, 'log-alert');
+                        break;
+                }
+            };
+
+            ws.onclose = function(e) {
+                addLog(`Connection lost to Kernel. Reconnecting in 3s... (Code: ${e.code})`, "log-alert");
+                setTimeout(connect, 3000);
+            };
+
+            ws.onerror = function(err) {
+                addLog("WebSocket error. See console for details.", "log-alert");
+                console.error("WebSocket Error:", err);
+                ws.close();
+            };
+        }
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            addLog("Initializing frontend UI...");
+            addLog("Attempting to connect to backend kernel...");
+            connect(); // Start the WebSocket connection
+        });
+
+    </script>
+</body>
+</html>
+
+</body>
+</html>
