@@ -170,3 +170,6 @@ This tool is for educational and authorized testing purposes only. Always ensure
 ---
 
 **Mirage V3** - Where AI meets cybersecurity training in a cyberpunk aesthetic. Happy hacking! 🚀
+
+---
+#cybersecurity #infosec #ethicalhacking #pentesting #security #honeypot
