@@ -1,15 +1,19 @@
-<div align="center">
+# 🌐💻 MIRAGE — Cyberpunk Cyber Range
 
-# 🌐💻 Mirage V3: Cyberpunk Edition
+A honeypot that fights back with AI. MIRAGE simulates SSH, FTP, and HTTP/S
+services behind a neon-soaked terminal UI, and uses Kimi AI to generate
+realistic, stateful responses to whoever connects — EASY mode plays
+vulnerable, HARD mode plays hardened. Built for red team practice and
+security training.
 
-**AI-Powered Cyber Range & Honeypot Simulator**
+```bash
+git clone https://github.com/Insider77Circle/MIRAGE.git && cd MIRAGE
+pip install -r requirements.txt
+cp .env.example .env   # add your Kimi API key
+sudo python3 mirage_v3_cyberpunk.py
+```
 
-[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![AI](https://img.shields.io/badge/AI-Kimi%20API-orange.svg)](https://platform.moonshot.cn/)
-[![Cyberpunk](https://img.shields.io/badge/Style-Cyberpunk-cyan.svg)](https://github.com/Insider77Circle/MIRAGE)
-[![Security](https://img.shields.io/badge/Security-Red%20Team-green.svg)](https://github.com/Insider77Circle/MIRAGE)
-
-</div>
+Then: `ssh root@localhost -p 22` — and watch it lie to you beautifully.
 
 ## 🎯 What is Mirage V3?
 
