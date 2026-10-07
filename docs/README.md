@@ -55,8 +55,8 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/Insider77Circle/mirage-v3.git
-cd mirage-v3
+git clone https://github.com/Insider77Circle/MIRAGE.git
+cd MIRAGE
 
 # Install dependencies
 pip install -r requirements.txt
