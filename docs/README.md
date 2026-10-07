@@ -6,8 +6,8 @@
 
 [![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![AI](https://img.shields.io/badge/AI-Kimi%20API-orange.svg)](https://platform.moonshot.cn/)
-[![Cyberpunk](https://img.shields.io/badge/Style-Cyberpunk-cyan.svg)](https://github.com/Insider77Circle/mirage-v3)
-[![Security](https://img.shields.io/badge/Security-Red%20Team-green.svg)](https://github.com/Insider77Circle/mirage-v3)
+[![Cyberpunk](https://img.shields.io/badge/Style-Cyberpunk-cyan.svg)](https://github.com/Insider77Circle/MIRAGE)
+[![Security](https://img.shields.io/badge/Security-Red%20Team-green.svg)](https://github.com/Insider77Circle/MIRAGE)
 
 </div>
 
